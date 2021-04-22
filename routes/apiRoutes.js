@@ -1,8 +1,11 @@
 const router = require('express').Router();
 const db = require('../models');
 
+//route to find all workouts with total duration
 router.get('/api/workouts', function (req, res) {
-  db.Workout.find({})
+  db.Workout.aggregate([
+    { $addFields: { totalDuration: { $sum: '$exercises.duration' } } },
+  ])
     .then(function (dbWorkout) {
       res.json(dbWorkout);
     })
@@ -11,6 +14,7 @@ router.get('/api/workouts', function (req, res) {
     });
 });
 
+//route to add a workout
 router.put('/api/workouts/:id', function (req, res) {
   db.Workout.findOneAndUpdate(
     { _id: req.params.id },
@@ -28,8 +32,9 @@ router.put('/api/workouts/:id', function (req, res) {
     });
 });
 
+//route to create workout
 router.post('/api/workouts', ({ body }, res) => {
-  db.Workout.create(body)
+  db.Workout.create({})
     .then((dbWorkout) => {
       res.json(dbWorkout);
     })
@@ -38,8 +43,16 @@ router.post('/api/workouts', ({ body }, res) => {
     });
 });
 
+//route to get workouts range for last 7 days
 router.get('/api/workouts/range', (req, res) => {
-  db.Workout.find({})
+  db.Workout.aggregate([
+    {
+      $addFields: {
+        totalDuration: { $sum: '$exercises.duration' },
+        totalWeight: { $sum: '$exercises.weight' },
+      },
+    },
+  ])
     .limit(7)
     .then((dbWorkout) => {
       res.json(dbWorkout);
